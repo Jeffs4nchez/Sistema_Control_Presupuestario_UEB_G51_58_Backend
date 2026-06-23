@@ -1,0 +1,22 @@
+providers = ["php"]
+
+[phases.setup]
+nixPkgs = [
+  "php82",
+  "php82Packages.composer",
+  "php82Extensions.pdo_pgsql",
+  "php82Extensions.pgsql",
+  "php82Extensions.mbstring",
+  "php82Extensions.openssl",
+  "php82Extensions.tokenizer",
+  "php82Extensions.xml",
+  "php82Extensions.ctype",
+  "php82Extensions.bcmath",
+  "php82Extensions.fileinfo",
+]
+
+[phases.install]
+cmds = ["composer install --no-dev --optimize-autoloader --no-scripts --no-interaction"]
+
+[phases.build]
+cmds = []
