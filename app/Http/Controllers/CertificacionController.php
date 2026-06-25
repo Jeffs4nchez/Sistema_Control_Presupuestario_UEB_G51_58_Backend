@@ -305,6 +305,7 @@ class CertificacionController extends Controller
 
             $destinatarios = User::whereIn('cargo', $cargosAprobadores)
                 ->where(DB::raw('LOWER(estado)'), 'activo')
+                ->where('recibe_notificaciones', true)
                 ->get();
 
             $nombreAnalista = $analista
@@ -357,9 +358,9 @@ class CertificacionController extends Controller
         $esAnalista3     = $cargoAprobador === 'Analista de presupuesto 3';
         $fecha           = now()->format('d/m/Y H:i');
 
-        // 1. Notificar al creador que su certificación fue aprobada
+        // 1. Notificar al creador que su certificación fue aprobada (si tiene notificaciones activas)
         $creador = User::find($cert->id_usuario);
-        if ($creador) {
+        if ($creador && $creador->recibe_notificaciones) {
             if (!$creador->correo_institucional) {
                 \Log::warning("El usuario creador (id={$creador->id_usuario}) no tiene correo institucional registrado.");
             } else {
@@ -387,6 +388,7 @@ class CertificacionController extends Controller
 
             $directores = User::whereIn('cargo', $cargosDirector)
                 ->where(DB::raw('LOWER(estado)'), 'activo')
+                ->where('recibe_notificaciones', true)
                 ->get();
 
             foreach ($directores as $director) {
@@ -1390,9 +1392,9 @@ class CertificacionController extends Controller
                     'updated_at'     => now(),
                 ]);
 
-            // Notificar al analista que creó el certificado
+            // Notificar al analista que creó el certificado (si tiene notificaciones activas)
             $analista = User::find($cert->id_usuario);
-            if ($analista && $analista->correo_institucional) {
+            if ($analista && $analista->recibe_notificaciones && $analista->correo_institucional) {
                 $revisor = Auth::user();
                 $nombreRevisor = $revisor ? trim($revisor->nombres . ' ' . $revisor->apellidos) : 'el responsable';
                 $cargoRevisor  = $revisor?->cargo ?? 'Responsable';

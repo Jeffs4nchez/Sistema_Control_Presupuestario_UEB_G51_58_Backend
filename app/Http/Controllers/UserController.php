@@ -38,6 +38,7 @@ class UserController extends Controller
                 'correo_institucional',
                 'cargo',
                 'estado',
+                'recibe_notificaciones',
                 'created_at'
             )->get();
 
@@ -62,23 +63,25 @@ class UserController extends Controller
         if ($deny = $this->denegarSiNoEsAdmin()) return $deny;
         try {
             $validated = $request->validate([
-                'nombres'              => 'required|string|max:100',
-                'apellidos'            => 'required|string|max:100',
-                'correo_institucional' => 'required|string|email|max:100|unique:usuarios,correo_institucional',
-                'cargo'                => 'required|string|in:Director(a) financiero,Analista de presupuesto 1,Analista de presupuesto 3,Director(a) de talento humano,Rector',
-                'estado'               => 'required|string|in:activo,inactivo,bloqueado',
+                'nombres'                => 'required|string|max:100',
+                'apellidos'              => 'required|string|max:100',
+                'correo_institucional'   => 'required|string|email|max:100|unique:usuarios,correo_institucional',
+                'cargo'                  => 'required|string|in:Director(a) financiero,Analista de presupuesto 1,Analista de presupuesto 3,Director(a) de talento humano,Rector',
+                'estado'                 => 'required|string|in:activo,inactivo,bloqueado',
+                'recibe_notificaciones'  => 'sometimes|boolean',
             ]);
 
             $contrasenaTemp = $this->generarContrasenaAleatoria();
 
             $usuario = User::create([
-                'nombres'              => $validated['nombres'],
-                'apellidos'            => $validated['apellidos'],
-                'correo_institucional' => $validated['correo_institucional'],
-                'contrasena'           => Hash::make($contrasenaTemp),
-                'cargo'                => $validated['cargo'],
-                'estado'               => $validated['estado'],
-                'contrasena_temporal'  => true,
+                'nombres'               => $validated['nombres'],
+                'apellidos'             => $validated['apellidos'],
+                'correo_institucional'  => $validated['correo_institucional'],
+                'contrasena'            => Hash::make($contrasenaTemp),
+                'cargo'                 => $validated['cargo'],
+                'estado'                => $validated['estado'],
+                'recibe_notificaciones' => $validated['recibe_notificaciones'] ?? true,
+                'contrasena_temporal'   => true,
             ]);
 
             try {
@@ -213,12 +216,13 @@ class UserController extends Controller
 
             // Validar datos
             $validated = $request->validate([
-                'nombres' => 'sometimes|required|string|max:100',
-                'apellidos' => 'sometimes|required|string|max:100',
-                'correo_institucional' => 'sometimes|required|string|email|max:100|unique:usuarios,correo_institucional,' . $id . ',id_usuario',
-                'contrasena' => 'sometimes|nullable|string|min:6',
-                'cargo' => 'sometimes|required|string|in:Director(a) financiero,Analista de presupuesto 1,Analista de presupuesto 3,Director(a) de talento humano,Rector',
-                'estado' => 'sometimes|required|string|in:activo,inactivo,bloqueado'
+                'nombres'               => 'sometimes|required|string|max:100',
+                'apellidos'             => 'sometimes|required|string|max:100',
+                'correo_institucional'  => 'sometimes|required|string|email|max:100|unique:usuarios,correo_institucional,' . $id . ',id_usuario',
+                'contrasena'            => 'sometimes|nullable|string|min:6',
+                'cargo'                 => 'sometimes|required|string|in:Director(a) financiero,Analista de presupuesto 1,Analista de presupuesto 3,Director(a) de talento humano,Rector',
+                'estado'                => 'sometimes|required|string|in:activo,inactivo,bloqueado',
+                'recibe_notificaciones' => 'sometimes|boolean',
             ]);
 
             // Actualizar campos
@@ -227,10 +231,13 @@ class UserController extends Controller
             if (isset($validated['correo_institucional'])) $usuario->correo_institucional = $validated['correo_institucional'];
             if (isset($validated['contrasena']) && !empty($validated['contrasena'])) {
                 $usuario->contrasena          = Hash::make($validated['contrasena']);
-                $usuario->contrasena_temporal = true; // el usuario debe cambiarla al entrar
+                $usuario->contrasena_temporal = true;
             }
             if (isset($validated['cargo'])) $usuario->cargo = $validated['cargo'];
             if (isset($validated['estado'])) $usuario->estado = $validated['estado'];
+            if (array_key_exists('recibe_notificaciones', $validated)) {
+                $usuario->recibe_notificaciones = $validated['recibe_notificaciones'];
+            }
 
             $usuario->save();
 

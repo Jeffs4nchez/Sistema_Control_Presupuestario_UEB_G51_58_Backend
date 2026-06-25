@@ -39,6 +39,7 @@ class User extends Authenticatable
         'contrasena',
         'cargo',
         'estado',
+        'recibe_notificaciones',
         'contrasena_temporal',
         'intentos_fallidos',
         'api_token',
@@ -73,8 +74,9 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'contrasena' => 'hashed',
+            'email_verified_at'      => 'datetime',
+            'contrasena'             => 'hashed',
+            'recibe_notificaciones'  => 'boolean',
         ];
     }
 
