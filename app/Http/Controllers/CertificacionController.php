@@ -298,7 +298,12 @@ class CertificacionController extends Controller
     private function notificarAnalista3($certificado, $analista, string $tipo = 'creacion'): void
     {
         try {
-            $destinatarios = User::where('cargo', 'Analista de presupuesto 3')
+            // Notificar solo a usuarios cuyo cargo tenga permiso 'aprobar' en certificaciones (RBAC)
+            $cargosAprobadores = RolPermiso::where('modulo', 'certificaciones')
+                ->where('accion', 'aprobar')
+                ->pluck('cargo');
+
+            $destinatarios = User::whereIn('cargo', $cargosAprobadores)
                 ->where(DB::raw('LOWER(estado)'), 'activo')
                 ->get();
 
@@ -373,9 +378,14 @@ class CertificacionController extends Controller
             \Log::warning("No se encontró el creador de la certificación id={$cert->id_certificacion}");
         }
 
-        // 2. Si aprobó el Analista 3, notificar también al Director Financiero
+        // 2. Si aprobó un no-Director, notificar a los cargos con permiso 'aprobar' que NO son el aprobador actual
         if ($esAnalista3) {
-            $directores = User::where('cargo', 'Director(a) financiero')
+            $cargosDirector = RolPermiso::where('modulo', 'certificaciones')
+                ->where('accion', 'aprobar')
+                ->where('cargo', '!=', $cargoAprobador)
+                ->pluck('cargo');
+
+            $directores = User::whereIn('cargo', $cargosDirector)
                 ->where(DB::raw('LOWER(estado)'), 'activo')
                 ->get();
 
