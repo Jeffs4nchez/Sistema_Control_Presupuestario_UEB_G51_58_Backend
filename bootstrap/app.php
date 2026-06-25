@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'validate.custom.token' => \App\Http\Middleware\ValidateCustomToken::class,
             'check.role'            => \App\Http\Middleware\CheckRole::class,
+            'check.permission'      => \App\Http\Middleware\CheckPermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

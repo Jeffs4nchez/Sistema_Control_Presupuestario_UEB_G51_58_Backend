@@ -12,6 +12,7 @@ use App\Http\Controllers\EntidadRequirienteController;
 use App\Http\Controllers\PresupuestoController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\AuditoriaController;
+use App\Http\Controllers\PermisoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -80,34 +81,41 @@ Route::middleware('validate.custom.token')->group(function () {
     Route::post('/usuarios/{id}/desbloquear', [UserController::class, 'desbloquear']);
     
     // Rutas CRUD de Certificación
-    Route::get('/certificacion', [CertificacionController::class, 'index']);
-    Route::post('/certificacion', [CertificacionController::class, 'store']);
-    Route::get('/certificacion/{id}', [CertificacionController::class, 'show']);
-    Route::put('/certificacion/{id}', [CertificacionController::class, 'update']);
-    Route::delete('/certificacion/{id}', [CertificacionController::class, 'destroy']);
-    
-    // Rutas para agregar/remover items
-    Route::post('/certificacion/{id}/agregar-item', [CertificacionController::class, 'agregarItem']);
-    Route::patch('/certificacion/{idCertificacion}/item/{idItem}', [CertificacionController::class, 'actualizarItem']);
-    Route::delete('/certificacion/{idCertificacion}/item/{idItem}', [CertificacionController::class, 'removerItem']);
+    Route::get('/certificacion',        [CertificacionController::class, 'index'])->middleware('check.permission:certificaciones,ver');
+    Route::post('/certificacion',       [CertificacionController::class, 'store'])->middleware('check.permission:certificaciones,crear');
+    Route::get('/certificacion/{id}',   [CertificacionController::class, 'show'])->middleware('check.permission:certificaciones,ver');
+    Route::put('/certificacion/{id}',   [CertificacionController::class, 'update'])->middleware('check.permission:certificaciones,crear');
+    Route::delete('/certificacion/{id}',[CertificacionController::class, 'destroy'])->middleware('check.permission:certificaciones,errar');
 
-    // Rutas de flujo de aprobación (director/analista)
-    Route::patch('/certificacion/{id}/aprobar',  [CertificacionController::class, 'aprobar']);
-    Route::patch('/certificacion/{id}/rechazar', [CertificacionController::class, 'rechazar']);
-    Route::patch('/certificacion/{id}/reenviar', [CertificacionController::class, 'reenviar']);
-    Route::patch('/certificacion/{id}/errar',    [CertificacionController::class, 'errar']);
+    // Rutas para agregar/remover items
+    Route::post('/certificacion/{id}/agregar-item',                    [CertificacionController::class, 'agregarItem'])->middleware('check.permission:certificaciones,crear');
+    Route::patch('/certificacion/{idCertificacion}/item/{idItem}',     [CertificacionController::class, 'actualizarItem'])->middleware('check.permission:certificaciones,crear');
+    Route::delete('/certificacion/{idCertificacion}/item/{idItem}',    [CertificacionController::class, 'removerItem'])->middleware('check.permission:certificaciones,crear');
+
+    // Rutas de flujo de aprobación
+    Route::patch('/certificacion/{id}/aprobar',  [CertificacionController::class, 'aprobar'])->middleware('check.permission:certificaciones,aprobar');
+    Route::patch('/certificacion/{id}/rechazar', [CertificacionController::class, 'rechazar'])->middleware('check.permission:certificaciones,rechazar');
+    Route::patch('/certificacion/{id}/reenviar', [CertificacionController::class, 'reenviar'])->middleware('check.permission:certificaciones,reenviar');
+    Route::patch('/certificacion/{id}/errar',    [CertificacionController::class, 'errar'])->middleware('check.permission:certificaciones,errar');
 
     // Rutas para crear unidades requirientes y cédulas
     Route::post('/certificacion/unidades-requirientes', [CertificacionController::class, 'createEntidadRequiriente']);
     Route::post('/certificacion/cedulas-presupuestarias', [CertificacionController::class, 'createCedulaPresupuestaria']);
 
     // Rutas de Liquidaciones
-    Route::get('/liquidaciones/certificaciones',     [LiquidacionController::class, 'certificaciones']);
-    Route::get('/liquidaciones/certificacion-items', [LiquidacionController::class, 'certificacionItems']);
-    Route::get('/liquidaciones',                     [LiquidacionController::class, 'index']);
-    Route::post('/liquidaciones',                    [LiquidacionController::class, 'store']);
-    Route::delete('/liquidaciones/{id}',             [LiquidacionController::class, 'destroy']);
-    Route::patch('/liquidaciones/{id}/anular',       [LiquidacionController::class, 'anular']);
+    Route::get('/liquidaciones/certificaciones',     [LiquidacionController::class, 'certificaciones'])->middleware('check.permission:liquidaciones,ver');
+    Route::get('/liquidaciones/certificacion-items', [LiquidacionController::class, 'certificacionItems'])->middleware('check.permission:liquidaciones,ver');
+    Route::get('/liquidaciones',                     [LiquidacionController::class, 'index'])->middleware('check.permission:liquidaciones,ver');
+    Route::post('/liquidaciones',                    [LiquidacionController::class, 'store'])->middleware('check.permission:liquidaciones,crear');
+    Route::delete('/liquidaciones/{id}',             [LiquidacionController::class, 'destroy'])->middleware('check.permission:liquidaciones,eliminar');
+    Route::patch('/liquidaciones/{id}/anular',       [LiquidacionController::class, 'anular'])->middleware('check.permission:liquidaciones,anular');
+
+    // Rutas de Permisos (solo Administrador)
+    Route::middleware('check.role:directores')->group(function () {
+        Route::get('/permisos',          [PermisoController::class, 'index']);
+        Route::put('/permisos',          [PermisoController::class, 'update']);
+        Route::get('/permisos/{cargo}',  [PermisoController::class, 'show']);
+    });
 
     // Rutas de Unidades Requirientes (HU-08)
     Route::get('/unidades-requirientes',            [EntidadRequirienteController::class, 'index']);

@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\Auditoria;
 use App\Models\User;
 use App\Traits\EnviaCorreoHtml;
+use App\Models\RolPermiso;
 use Carbon\Carbon;
 
 class CertificacionController extends Controller
@@ -177,9 +178,8 @@ class CertificacionController extends Controller
      */
     public function store(Request $request)
     {
-        $rolesOperativos = ['Director(a) financiero', 'Analista de presupuesto 1', 'Analista de presupuesto 3', 'Administrador del sistema'];
         $cargo = Auth::user()?->cargo;
-        if (!in_array($cargo, $rolesOperativos)) {
+        if (!RolPermiso::tiene($cargo, 'certificaciones', 'crear')) {
             return response()->json(['success' => false, 'message' => 'No tiene permiso para crear certificaciones'], 403);
         }
 
@@ -438,8 +438,7 @@ class CertificacionController extends Controller
             $certificado = Certificacion::findOrFail($idCertificacion);
 
             $u = Auth::user();
-            $rolesDirector = ['Director(a) financiero', 'Analista de presupuesto 3', 'Administrador del sistema'];
-            if (!in_array($u?->cargo, $rolesDirector) && (int) $certificado->id_usuario !== (int) $u?->id_usuario) {
+            if (!RolPermiso::tiene($u?->cargo, 'certificaciones', 'aprobar') && (int) $certificado->id_usuario !== (int) $u?->id_usuario) {
                 return response()->json(['success' => false, 'message' => 'No puede agregar ítems a una certificación de otro usuario'], 403);
             }
             if ($certificado->estado !== 'REGISTRADO') {
@@ -524,8 +523,7 @@ class CertificacionController extends Controller
             $certificado = Certificacion::findOrFail($idCertificacion);
 
             $u = Auth::user();
-            $rolesDirector = ['Director(a) financiero', 'Analista de presupuesto 3', 'Administrador del sistema'];
-            if (!in_array($u?->cargo, $rolesDirector) && (int) $certificado->id_usuario !== (int) $u?->id_usuario) {
+            if (!RolPermiso::tiene($u?->cargo, 'certificaciones', 'aprobar') && (int) $certificado->id_usuario !== (int) $u?->id_usuario) {
                 return response()->json(['success' => false, 'message' => 'No puede editar ítems de una certificación ajena'], 403);
             }
 
@@ -579,8 +577,7 @@ class CertificacionController extends Controller
             $certificado = Certificacion::findOrFail($idCertificacion);
 
             $u = Auth::user();
-            $rolesDirector = ['Director(a) financiero', 'Analista de presupuesto 3', 'Administrador del sistema'];
-            if (!in_array($u?->cargo, $rolesDirector) && (int) $certificado->id_usuario !== (int) $u?->id_usuario) {
+            if (!RolPermiso::tiene($u?->cargo, 'certificaciones', 'aprobar') && (int) $certificado->id_usuario !== (int) $u?->id_usuario) {
                 return response()->json(['success' => false, 'message' => 'No puede eliminar ítems de una certificación ajena'], 403);
             }
 
@@ -641,9 +638,8 @@ class CertificacionController extends Controller
             'estado' => 'nullable|in:REGISTRADO,APROBADO,RECHAZADO,LIQUIDADO,ERRADO'
         ]);
 
-        $u             = Auth::user();
-        $rolesDirector = ['Director(a) financiero', 'Analista de presupuesto 3', 'Administrador del sistema'];
-        $esDirector    = in_array($u?->cargo, $rolesDirector);
+        $u          = Auth::user();
+        $esDirector = RolPermiso::tiene($u?->cargo, 'certificaciones', 'aprobar');
 
         try {
             $certificado = Certificacion::findOrFail($id);
@@ -742,9 +738,8 @@ class CertificacionController extends Controller
      */
     public function destroy($id)
     {
-        $u             = Auth::user();
-        $rolesDirector = ['Director(a) financiero', 'Analista de presupuesto 3', 'Administrador del sistema'];
-        $esDirector    = in_array($u?->cargo, $rolesDirector);
+        $u          = Auth::user();
+        $esDirector = RolPermiso::tiene($u?->cargo, 'certificaciones', 'aprobar');
 
         try {
             $certificado = Certificacion::findOrFail($id);
@@ -1332,8 +1327,7 @@ class CertificacionController extends Controller
     // ── Solo Director: aprobar certificación REGISTRADO → APROBADO ─────
     public function aprobar(int $id)
     {
-        $rolesPermitidos = ['Director(a) financiero', 'Analista de presupuesto 3', 'Administrador del sistema'];
-        if (!in_array(Auth::user()?->cargo, $rolesPermitidos)) {
+        if (!RolPermiso::tiene(Auth::user()?->cargo, 'certificaciones', 'aprobar')) {
             return response()->json(['success' => false, 'message' => 'Solo el Director Financiero puede aprobar certificaciones'], 403);
         }
 
@@ -1361,8 +1355,7 @@ class CertificacionController extends Controller
     // ── Solo Director: rechazar certificación REGISTRADO → RECHAZADO ───
     public function rechazar(Request $request, int $id)
     {
-        $rolesPermitidos = ['Director(a) financiero', 'Analista de presupuesto 3', 'Administrador del sistema'];
-        if (!in_array(Auth::user()?->cargo, $rolesPermitidos)) {
+        if (!RolPermiso::tiene(Auth::user()?->cargo, 'certificaciones', 'rechazar')) {
             return response()->json(['success' => false, 'message' => 'Solo el Director Financiero puede rechazar certificaciones'], 403);
         }
 
@@ -1430,8 +1423,7 @@ class CertificacionController extends Controller
             }
 
             $u = Auth::user();
-            $rolesDirector = ['Director(a) financiero', 'Analista de presupuesto 3', 'Administrador del sistema'];
-            if (!in_array($u?->cargo, $rolesDirector) && (int) $cert->id_usuario !== (int) $u?->id_usuario) {
+            if (!RolPermiso::tiene($u?->cargo, 'certificaciones', 'aprobar') && (int) $cert->id_usuario !== (int) $u?->id_usuario) {
                 return response()->json(['success' => false, 'message' => 'Solo puede reenviar sus propias certificaciones'], 403);
             }
 
@@ -1458,8 +1450,7 @@ class CertificacionController extends Controller
     // ── Analista/Director: marcar certificación REGISTRADO/APROBADO → ERRADO ──
     public function errar(int $id)
     {
-        $rolesPermitidos = ['Director(a) financiero', 'Administrador del sistema', 'Analista de presupuesto 1'];
-        if (!in_array(Auth::user()?->cargo, $rolesPermitidos)) {
+        if (!RolPermiso::tiene(Auth::user()?->cargo, 'certificaciones', 'errar')) {
             return response()->json(['success' => false, 'message' => 'No tiene permiso para marcar como errado'], 403);
         }
 
@@ -1470,7 +1461,7 @@ class CertificacionController extends Controller
             }
 
             $user       = Auth::user();
-            $esDirector = in_array($user?->cargo, ['Director(a) financiero', 'Analista de presupuesto 3', 'Administrador del sistema']);
+            $esDirector = RolPermiso::tiene($user?->cargo, 'certificaciones', 'aprobar');
 
             if (!in_array($cert->estado, ['REGISTRADO', 'APROBADO'])) {
                 return response()->json(['success' => false, 'message' => 'Solo se pueden marcar como erradas las certificaciones en estado REGISTRADO o APROBADO'], 422);

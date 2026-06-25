@@ -8,6 +8,7 @@ use App\Models\CertificacionItem;
 use App\Models\Auditoria;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Models\RolPermiso;
 
 class LiquidacionController extends Controller
 {
@@ -27,8 +28,7 @@ class LiquidacionController extends Controller
 
             // Analista solo ve liquidaciones de sus propias certificaciones
             $u = Auth::user();
-            $rolesDirector = ['Director(a) financiero', 'Analista de presupuesto 3', 'Administrador del sistema'];
-            if ($u && !in_array($u->cargo, $rolesDirector)) {
+            if ($u && !RolPermiso::tiene($u->cargo, 'certificaciones', 'aprobar')) {
                 $query->whereHas('certificacionItem.certificacion', function ($q) use ($u) {
                     $q->where('id_usuario', $u->id_usuario);
                 });
@@ -67,8 +67,7 @@ class LiquidacionController extends Controller
      */
     public function store(Request $request)
     {
-        $rolesOperativos = ['Director(a) financiero', 'Analista de presupuesto 1', 'Analista de presupuesto 3', 'Administrador del sistema'];
-        if (!in_array(Auth::user()?->cargo, $rolesOperativos)) {
+        if (!RolPermiso::tiene(Auth::user()?->cargo, 'liquidaciones', 'crear')) {
             return response()->json(['success' => false, 'message' => 'No tiene permiso para registrar liquidaciones'], 403);
         }
 
@@ -175,8 +174,7 @@ class LiquidacionController extends Controller
      */
     public function destroy($id)
     {
-        $rolesPermitidos = ['Director(a) financiero', 'Administrador del sistema'];
-        if (!in_array(Auth::user()?->cargo, $rolesPermitidos)) {
+        if (!RolPermiso::tiene(Auth::user()?->cargo, 'liquidaciones', 'eliminar')) {
             return response()->json(['success' => false, 'message' => 'No tiene permiso para eliminar liquidaciones'], 403);
         }
 
@@ -199,8 +197,7 @@ class LiquidacionController extends Controller
      */
     public function anular(Request $request, $id)
     {
-        $rolesPermitidos = ['Director(a) financiero', 'Administrador del sistema'];
-        if (!in_array(\Auth::user()?->cargo, $rolesPermitidos)) {
+        if (!RolPermiso::tiene(\Auth::user()?->cargo, 'liquidaciones', 'anular')) {
             return response()->json(['success' => false, 'message' => 'No tiene permiso para anular liquidaciones'], 403);
         }
 
